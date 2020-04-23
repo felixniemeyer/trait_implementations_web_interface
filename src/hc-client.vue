@@ -64,11 +64,16 @@ export default {
 		this.hc_connection = connect({url: this.conductor_url})
 		this.hc_connection.then(({callZome, close}) => {
 			callZome(
-				'test-instance', 
+				this.conductor_instance, 
 				'social_graph', 
 				'get_my_entry'
 			)({args: {}}).then(result => {
-				this.agent_address = result.Ok 
+				try {
+					let parsed = JSON.parse(result) 
+					this.agent_address = parsed.Ok
+				} catch {
+					console.error("bad response")
+				}
 			})
 		})
 	},
