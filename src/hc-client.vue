@@ -1,7 +1,11 @@
 <template>
 	<div>
 		url: {{ conductor_url }}
-		<div>
+		<div v-if="callZome === undefined" style="color:#aa0000">
+			not connected to the conductor
+		</div>
+		<div v-else style="color:#005500">
+			connected to the conductor <br/>
 			My agent address: {{ agent_address }}
 		</div>
 		<div>
@@ -16,8 +20,8 @@
 				incoming
 			</div>
 			<div>
-				<input v-model='new_friend_request_target_agent_address'/>
-				<button v-on:click='sendFriendRequest' placeholder='agent address'>send new friend request</button>
+				<input v-model='new_friendship_request_target_agent_address'/>
+				<button v-on:click='request_friendship' placeholder='agent address'>send new friend request</button>
 			</div>
 		</div>
 		<div>
@@ -40,10 +44,11 @@ export default {
 	data: function() {
 		return {
 			agent_address: undefined, 
-			new_friend_request_target_agent_address: undefined, 
+			callZome: undefined, 
+			new_friendship_request_target_agent_address: undefined, 
 			new_followship_target_agent_address: undefined, 
-			incoming_friend_requests: [],
-			outgoing_friend_requests: [], 
+			incoming_friendship_requests: [],
+			outgoing_friendship_requests: [], 
 			followers: [], 
 			following: []
 		}
@@ -53,11 +58,46 @@ export default {
 		'conductor_instance'
 	],
 	methods: {
-		sendFriendRequest: function(event) {
-			console.log('send new friend request to agent with address', this.new_friend_request_target_agent_address)
+		request_friendship: function(event) {
+			console.log('send new friend request to agent with address', this.new_friendship_request_target_agent_address)
+			this.callZome(
+				this.conductor_instance, 
+				'social_graph', 
+				'request_friendship'
+			)({args: {other_agent: this.new_friendship_request_target_agent_address}}).then(result => {
+				this.refresh_outgoing_friendship_requests()
+			})
 		}, 
 		follow: function(event) {
 			console.log('follow', this.new_followship_target_agent_address)
+			this.callZome(
+				this.conductor_instance, 
+				'social_graph', 
+				'follow'
+			)({args: {target_agent_address: this.new_followship_target_agent_address}}).then(result => {
+				this.refresh_my_followings()
+			})
+		}, 
+		refresh_my_followings: function() {
+			this.callZome(
+				this.conductor_instance, 
+				'social_graph', 
+				'my_followings'
+			)({args: {}}).then(result => {
+				console.log(result)
+				// TODO
+			})
+		},
+		refresh_outgoing_friendship_requests: function() {
+			this.callZome(
+				this.conductor_instance, 
+				'social_graph', 
+				'outgoing_friendship_requests'
+				// 'my_followings'
+			)({args: {}}).then(result => {
+				console.log(result) 
+				// TODO
+			})
 		}
 	},
 	created: function() {
@@ -66,11 +106,13 @@ export default {
 			callZome(
 				this.conductor_instance, 
 				'social_graph', 
-				'get_my_entry'
+				'my_agent_address'
 			)({args: {}}).then(result => {
 				try {
 					let parsed = JSON.parse(result) 
 					this.agent_address = parsed.Ok
+					this.callZome = callZome
+					this.refresh_my_followings()
 				} catch {
 					console.error("bad response")
 				}
