@@ -1,10 +1,10 @@
 <template>
 	<div>
 		url: {{ conductor_url }}
-		<div v-if="callZome === undefined" style="color:#aa0000">
+		<div v-if="callZome === undefined" style="color:#bb492f">
 			not connected to the conductor
 		</div>
-		<div v-else style="color:#005500">
+		<div v-else style="color:#33bb44">
 			connected to the conductor <br/>
 			My agent address: {{ agent_address }}
 		</div>
@@ -126,10 +126,28 @@ export default {
 
 <style>
 div {
+	color: #fff;
 	margin: 10px;
 	padding: 5px;
 	background-color: rgba(90, 130, 200, 0.2);
 	border-radius: 5px;
 	border: 2px solid rgba(45, 65, 100, 0.5);
+}
+input, button {
+	padding: 0.3em; 
+	margin: 0.5em; 
+	border-radius: 0.3em;
+	background-color:#fff2;
+	color:#fff; 
+}
+input {
+	border: none; 
+}
+button {
+	border: 0.15em solid white;
+	cursor: pointer;
+}
+button:hover{
+	background-color:#fff6; 
 }
 </style>
