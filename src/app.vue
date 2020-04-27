@@ -3,7 +3,7 @@
 		HC conductor protocol: <input type="text" v-model="hc_conductor_protocol" /> <br/> 
 		HC conductor host: <input type="text" v-model="hc_conductor_host" /> <br/> 
 		HC conductor port: <input type="text" v-model="hc_conductor_port" /> <br/>
-		HC conductor port: <input type="text" v-model="conductor_instance" /> <br/>
+		HC conductor instance: <input type="text" v-model="conductor_instance" /> <br/>
 		<button v-on:click="setConductor">set conductor</button>
 		<div v-if="conductor_url === undefined">
 			set conductor in order to proceed
@@ -26,13 +26,12 @@ export default {
 			hc_conductor_protocol: 'ws',
 			hc_conductor_host: 'localhost',
 			hc_conductor_port: 8888,
-			conductor_instance: 'test-instance',
+			conductor_instance: 'test-instance1',
 			conductor_url: undefined
 		}
 	},
 	methods: {
 		setConductor: function(event) {
-			console.log("hey")
 			this.conductor_url = 
 				this.hc_conductor_protocol + '://' + 
 				this.hc_conductor_host + ':' +

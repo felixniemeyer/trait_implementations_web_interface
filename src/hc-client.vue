@@ -15,23 +15,53 @@
 			Friend requests: 
 			<div>
 				outgoing
+				{{ outgoing_friendship_requests }}
 			</div>
 			<div>
 				incoming
+				{{ incoming_friendship_requests }}
 			</div>
 			<div>
-				<input v-model='new_friendship_request_target_agent_address'/>
-				<button v-on:click='request_friendship' placeholder='agent address'>send new friend request</button>
+				<input v-model='new_friendship_request_target_agent_address' placeholder='agent address'/>
+				<button v-on:click='request_friendship' >send new friend request</button>
 			</div>
 		</div>
 		<div>
 			Followers: 
+				{{ followers }} 
 		</div>
 		<div>
 			Following: 
+				{{ following }}
 			<div>
-				<input v-model='new_followship_target_agent_address'/>
-				<button v-on:click='follow' placeholder='agent address'>follow</button>
+				<input v-model='new_followship_target_agent_address' placeholder='agent address'/>
+				<button v-on:click='follow'>follow</button>
+			</div>
+		</div>
+		<div>
+			<p>
+				Test entries: 
+					{{ test_entries }}
+			</p>
+			<p>
+				Test entry addresses: 
+					{{ test_entry_addresses }}
+			</p>
+			<div>
+				<input v-model='new_test_entry_message'placeholder='entry message'/>
+				<button v-on:click='make_test_entry' >make test entry</button>
+				<p>
+					address of most recenttly created entry: <br/>
+					{{ recently_creates_test_entry_address }}
+				</p>
+			</div>
+			<div>
+				<input v-model='test_entry_address'placeholder='entry address'/>
+				<button v-on:click='show_test_entry_message' >show message</button>
+				<p>
+					retrieved test entry message: <br />
+					{{ retrieved_test_entry_message }}
+				</p>
 			</div>
 		</div>
 	</div>
@@ -50,7 +80,14 @@ export default {
 			incoming_friendship_requests: [],
 			outgoing_friendship_requests: [], 
 			followers: [], 
-			following: []
+			following: [], 
+			recently_creates_test_entry_address: "", 
+
+			new_test_entry_message: "", 
+			test_entries: [],
+			test_entry_addresses: [],
+			retrieved_test_entry_message: "", 
+			test_entry_address: "",
 		}
 	},
 	props: [
@@ -58,23 +95,67 @@ export default {
 		'conductor_instance'
 	],
 	methods: {
+		make_test_entry: function(event) {
+			console.log("making new test entry")
+			this.callZome(
+				this.conductor_instance, 
+				'social_graph', 
+				'make_test_entry'
+			)({message: this.new_test_entry_message }).then(result => {
+				result = JSON.parse(result) 
+				this.recently_creates_test_entry_address = result.Ok
+				this.refresh_test_entries()
+			})
+		}, 
+		refresh_test_entries: function() {
+			this.callZome(
+				this.conductor_instance, 
+				'social_graph', 
+				'get_test_entry_addresses'
+			)({}).then(result => {
+				result = JSON.parse(result) 
+				this.test_entry_addresses = result.Ok
+			})
+			this.callZome(
+				this.conductor_instance, 
+				'social_graph', 
+				'get_test_entries'
+			)({}).then(result => {
+				result = JSON.parse(result) 
+				this.test_entries = result.Ok
+			})
+		},		
+		show_test_entry_message: function(event) {
+			this.callZome(
+				this.conductor_instance, 
+				'social_graph', 
+				'get_test_entry'
+			)({entry_address: this.test_entry_address}).then(result => {
+				result = JSON.parse(result) 
+				this.retrieved_test_entry_message = result.Ok.message
+			})
+		},
 		request_friendship: function(event) {
-			console.log('send new friend request to agent with address', this.new_friendship_request_target_agent_address)
 			this.callZome(
 				this.conductor_instance, 
 				'social_graph', 
 				'request_friendship'
-			)({args: {other_agent: this.new_friendship_request_target_agent_address}}).then(result => {
+			)({other_agent: this.new_friendship_request_target_agent_address}).then(result => {
+				result = JSON.parse(result) 
+				console.log('follow friendship', result) 
 				this.refresh_outgoing_friendship_requests()
+				this.refresh_incoming_friendship_requests()
 			})
 		}, 
 		follow: function(event) {
-			console.log('follow', this.new_followship_target_agent_address)
+			console.log('follow') 
 			this.callZome(
 				this.conductor_instance, 
 				'social_graph', 
 				'follow'
-			)({args: {target_agent_address: this.new_followship_target_agent_address}}).then(result => {
+			)({target_agent_address: this.new_followship_target_agent_address}).then(result => {
+				result = JSON.parse(result) 
+				console.log('follow request result', result) 
 				this.refresh_my_followings()
 			})
 		}, 
@@ -83,8 +164,9 @@ export default {
 				this.conductor_instance, 
 				'social_graph', 
 				'my_followings'
-			)({args: {}}).then(result => {
-				console.log(result)
+			)({}).then(result => {
+				result = JSON.parse(result) 
+				this.following = result.Ok
 				// TODO
 			})
 		},
@@ -94,9 +176,20 @@ export default {
 				'social_graph', 
 				'outgoing_friendship_requests'
 				// 'my_followings'
-			)({args: {}}).then(result => {
-				console.log(result) 
-				// TODO
+			)({}).then(result => {
+				result = JSON.parse(result)
+				this.outgoing_friendship_requests = result.Ok
+			})
+		}, 
+		refresh_incoming_friendship_requests: function() {
+			this.callZome(
+				this.conductor_instance, 
+				'social_graph', 
+				'incoming_friendship_requests'
+				// 'my_followings'
+			)({}).then(result => {
+				result = JSON.parse(result)
+				this.incoming_friendship_requests = result.Ok
 			})
 		}
 	},
@@ -113,6 +206,8 @@ export default {
 					this.agent_address = parsed.Ok
 					this.callZome = callZome
 					this.refresh_my_followings()
+					this.refresh_incoming_friendship_requests()
+					this.refresh_outgoing_friendship_requests()
 				} catch {
 					console.error("bad response")
 				}
@@ -142,6 +237,9 @@ input, button {
 }
 input {
 	border: none; 
+}
+::placeholder {
+	color: #aaa; 
 }
 button {
 	border: 0.15em solid white;
