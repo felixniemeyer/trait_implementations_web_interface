@@ -1,6 +1,7 @@
 <template>
 	<div>
 		url: {{ conductor_url }}
+		<button v-on:click="refresh_all">refresh all</button>
 		<div v-if="callZome === undefined" style="color:#bb492f">
 			not connected to the conductor
 		</div>
@@ -28,11 +29,11 @@
 		</div>
 		<div>
 			Followers: 
-				{{ followers }} 
+			<p v-for="(follower, index) in followers" :key="index">{{ index }}: {{follower}}</p>
 		</div>
 		<div>
 			Following: 
-				{{ following }}
+			<p v-for="(follower, index) in following" :key="index">{{ index }}: {{follower}}</p>
 			<div>
 				<input v-model='new_followship_target_agent_address' placeholder='agent address'/>
 				<button v-on:click='follow'>follow</button>
@@ -95,6 +96,12 @@ export default {
 		'conductor_instance'
 	],
 	methods: {
+		refresh_all: function(event) {
+			this.refresh_my_followings()
+			this.refresh_my_followers()
+			this.refresh_incoming_friendship_requests()
+			this.refresh_outgoing_friendship_requests()
+		},
 		make_test_entry: function(event) {
 			console.log("making new test entry")
 			this.callZome(
@@ -159,6 +166,17 @@ export default {
 				this.refresh_my_followings()
 			})
 		}, 
+		refresh_my_followers: function() {
+			// this.callZome(
+			// 	this.conductor_instance, 
+			// 	'social_graph', 
+			// 	'my_followers'
+			// )({}).then(result => {
+			// 	result = JSON.parse(result) 
+			// 	this.followers = result.Ok
+			// 	// TODO
+			// }) 
+		},
 		refresh_my_followings: function() {
 			this.callZome(
 				this.conductor_instance, 
@@ -200,14 +218,12 @@ export default {
 				this.conductor_instance, 
 				'social_graph', 
 				'my_agent_address'
-			)({args: {}}).then(result => {
+			)({}).then(result => {
 				try {
-					let parsed = JSON.parse(result) 
-					this.agent_address = parsed.Ok
+					var result = JSON.parse(result) 
+					this.agent_address = result.Ok
 					this.callZome = callZome
-					this.refresh_my_followings()
-					this.refresh_incoming_friendship_requests()
-					this.refresh_outgoing_friendship_requests()
+					this.refresh_all()
 				} catch {
 					console.error("bad response")
 				}
